@@ -26,6 +26,16 @@ var settings_kafka = {
 };
 
 
+var request = require('request');
+
+var options = {
+  uri: 'https://hooks.slack.com/services/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',
+  method: 'POST',
+  json: {
+    "text": "good"
+  }
+};
+
 ascoltatori_mqtt.build(settings_mqtt, function (err, ascoltatori_mqtt){
   ascoltatori_mqtt.subscribe('test', function(topic,message) {
     console.log(arguments);
@@ -48,31 +58,22 @@ ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
     });
   });
 });
-// build for mqtt
-/*
-ascoltatori.build(settings_mqtt, function (err, ascoltatore_mqtt) {
-    ascoltatore.subscribe("topic_from_mqtt", function() {
-        console.log(arguments);
-        arrrg = arguments;
-        // for testing..
-        ascoltatore.publish("topic_for_mqtt",arrrg, function(){
-            console.log(arguments);
-        });
-        // build for kafka
-        ascoltatori_kafka.build(settings_kafka, function (err_kafka, ascoltatore_kafka){
-            ascoltatore_kafka.publish("topic_for_kafka",arrrg, function(){
-                console.log(arguments);
-            });
-            if(err_kafka){
-                console.log(err)
-            }
-        });
+
+ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
+  ascoltatori_kafka.subscribe('webhook', function(topic, message) {
+    console.log(arguments);
+    var options = {
+      uri: 'https://hooks.slack.com/services/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',
+      method: 'POST',
+      json: {
+        "text": message
+      }
+    };
+
+    request(options, function (error, response, body) {
+      if (!error && response.statusCode == 200) {
+        console.log(body.id) // Print the shortened url.
+      }
     });
-    if(err){
-        console.log(err)
-    }
-
-
-
+  });
 });
-*/
