@@ -1,8 +1,21 @@
 // var ponte = require('ponte');
 var ascoltatori_mqtt = require('ascoltatori');
 var ascoltatori_kafka = require('ascoltatori');
-var mqtt = require('mqtt');
-var arrrg = "no connection";
+var mqtt = require('mqtt')
+var fs = require('fs')
+
+var KEY = fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/iui-MacBook-Air.local.key')
+var CERT = fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/iui-MacBook-Air.local.crt')
+var TRUSTED_CA_LIST = fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/ca.crt')
+
+var options = {
+  key: KEY,
+  cert: CERT,
+  rejectUnauthorized: true,
+  // The CA list will be used to determine if server is authorized
+  ca: TRUSTED_CA_LIST
+}
+
 var settings_mqtt = {
   type: 'mqtt',
   // set 'true' if input type is json type
@@ -26,9 +39,54 @@ var settings_kafka = {
   }
 };
 
+var client = mqtt.connect('mqtt://localhost:8883',options)
 
-var request = require('request');
+client.subscribe('enow/+/+/+/order')
 
+client.on('message', function (topic, message) {
+  //console.log(message.toString())
+  console.log(arguments[0]);
+  var topicName = JSON.stringify(arguments[0]);
+  ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
+    var arr = topicName.substring(1,topicName.length -1).split("/");
+    var corporationName = arr[0];
+    var serverId = arr[1];
+    var brokerId = arr[2];
+    var deviceId = arr[3];
+    var kafkaTopic = arr[4];
+
+    var str = "{\"corporationName\":\"" + corporationName + "\",\"serverId\":\"" + serverId + "\",\"brokerId\":\"" +  brokerId  + "\",\"deviceId\":\"" + deviceId + "\",\"kafkaTopic\":\"" + kafkaTopic + "\",\"payload\":\"" + message + "\"}"
+    var jsonObj = JSON.parse(str);
+
+      ascoltatori_kafka.publish('order', JSON.stringify(jsonObj), function() {
+        console.log('message published');
+      });
+    });
+})
+
+ascoltatori_mqtt.build(settings_mqtt, function (err, ascoltatori_mqtt){
+  ascoltatori_mqtt.subscribe('enow/+/+/+/+', function(topic,message) {
+    console.log(arguments);
+    var topicName = JSON.stringify(arguments[0]);
+    ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
+      var arr = topicName.substring(1,topicName.length -1).split("/");
+      var corporationName = arr[0];
+      var serverId = arr[1];
+      var brokerId = arr[2];
+      var deviceId = arr[3];
+      var roadMapId = arr[4];
+
+
+      var str = "{\"corporationName\":\"" + corporationName + "\",\"serverId\":\"" + serverId + "\",\"brokerId\":\"" +  brokerId  + "\",\"deviceId\":\"" + deviceId + "\",\"roadMapId\":" + roadMapId + ",\"payload\":\"" + message + "\"}"
+      var jsonObj = JSON.parse(str);
+      ascoltatori_kafka.publish('order', JSON.stringify(jsonObj), function() {
+        console.log('message published');
+      });
+    });
+  });
+});
+
+/*
 ascoltatori_mqtt.build(settings_mqtt, function (err, ascoltatori_mqtt){
   ascoltatori_mqtt.subscribe('test', function(topic,message) {
     console.log(arguments);
@@ -39,21 +97,9 @@ ascoltatori_mqtt.build(settings_mqtt, function (err, ascoltatori_mqtt){
     });
   });
 });
+*/
 
-ascoltatori_mqtt.build(settings_mqtt, function (err, ascoltatori_mqtt){
-  ascoltatori_mqtt.subscribe('enow/+/+/+/+', function(topic,message) {
-    //    enow/serverId/phaseNum/action/brokerId/deviceId/parameter
-    console.log(arguments);
-    var topicName = JSON.stringify(arguments[0]);
-    ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
-      ascoltatori_kafka.publish('event', topicName.substring(1,topicName.length -1) + " " + message, function() {
-        console.log('message published');
-      });
-    });
-  });
-});
-
-
+/*
 ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
   ascoltatori_kafka.subscribe('onlytest', function(topic, message) {
     console.log(arguments);
@@ -64,7 +110,9 @@ ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
     });
   });
 });
+*/
 
+/*
 ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
   ascoltatori_kafka.subscribe('webhook', function(topic, message) {
     console.log(arguments);
@@ -83,3 +131,4 @@ ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
     });
   });
 });
+*/
