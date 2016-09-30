@@ -27,6 +27,7 @@ var findbrokers = function(db, callback) {
       assert.equal(err, null);
       if (doc != null) {
          makeFunction(doc.brokerId,doc.ipAddress,doc.port)
+         console.log("made connection to brokerId : " + doc.brokerId + " ipAddress : " + doc.ipAddress + " port : "  + doc.port);
       } else {
          callback();
       }
@@ -40,10 +41,9 @@ MongoClient.connect('mongodb://localhost:27017/connectionData', function(err, db
   });
 });
 
-
 ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
   ascoltatori_kafka.subscribe('brokerAdd', function(topic, message) {
-    console.log("topic name : " + topic + " message : " + message);
+    console.log("added broker : " + message);
 
     var jsonMessage = JSON.parse(message);
 
@@ -60,6 +60,7 @@ ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
     for(i = 0 ; i<brokerList.length ; i++){
       if(message == brokerList[i].brokerId){
         console.log("delete" + message);
+        console.log("deleting broker is not succeed")
         brokerList.splice(i,1);
         functions.splice(i,1);
       }
@@ -70,8 +71,6 @@ ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
 
 ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
   ascoltatori_kafka.subscribe("feed", function(topic, message) {
-    console.log("succeed subscribing to kafka topic " + topic);
-
     var jsonMessage = JSON.parse(message);
 
     var topicName = jsonMessage.topic
@@ -85,8 +84,8 @@ ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
 
     for(i = 0 ; i<brokerList.length ; i++){
       if(brokerId == brokerList[i].brokerId){
-        brokerList[i].broker.publish(topicName + "/alive/response",result)
-        console.log("topic name : " + topicName + "/alive/response message : " + result);
+        brokerList[i].broker.publish(topicName + "/feed",result)
+        console.log("messaging to a message " + result+" to topic name : " + topicName + "/feed succeed");
       }
     }
   });
@@ -117,7 +116,7 @@ function makeFunction(brokerId,ipAddress,port){
 
     brokerList.push({"brokerId":brokerId,"broker":broker,"brokerSetting":brokerSetting})
 
-    broker.subscribe("enow/server0/"+brokerId+"/+/alive/request");
+    broker.subscribe("enow/server0/"+brokerId+"/+/status");
     broker.on('message', function (topic, message) {
       console.log("succeed subscribing to mqtt topic " + topic);
 
@@ -150,7 +149,7 @@ function addSSLFunction(brokerId){
 
       functions[i] = function(){
 
-        brokerSSL.subscribe("enow/server0/"+brokerId+"/+/alive/request");
+        brokerSSL.subscribe("enow/server0/"+brokerId+"/+/status");
         brokerSSL.on('message', function (topic, message) {
           console.log("succeed subscribing to mqtt topic " + topic);
 
@@ -180,7 +179,7 @@ function subSSLFunction(brokerId){
 
       functions[i] = function(){
 
-        broker.subscribe("enow/server0/"+brokerId+"/+/alive/request");
+        broker.subscribe("enow/server0/"+brokerId+"/+/status");
         broker.on('message', function (topic, message) {
           console.log("succeed subscribing to mqtt topic " + topic);
 
