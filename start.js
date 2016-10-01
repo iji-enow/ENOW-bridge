@@ -76,15 +76,14 @@ ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
     var topicName = jsonMessage.topic
     var payload = jsonMessage.payload
     var callback = payload.callback
-    var jsonCallback = JSON.parse(callback);
-    var result = jsonCallback.result
+
 
     var arr = topicName.split("/");
     var brokerId = arr[2];
 
     for(i = 0 ; i<brokerList.length ; i++){
       if(brokerId == brokerList[i].brokerId){
-        brokerList[i].broker.publish(topicName + "/feed",result)
+        brokerList[i].broker.publish(topicName + "/feed",JSON.stringify(callback))
         console.log("messaging to a message " + result+" to topic name : " + topicName + "/feed succeed");
       }
     }
@@ -93,19 +92,17 @@ ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
 
 ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
   ascoltatori_kafka.subscribe('sslAdd', function(topic, message) {
-    console.log("topic name : " + topic + " message : " + message);
-
     addSSLFunction(message)
 
+    console.log("adding ssl option to topic : " + topic + " succeed");
   });
 });
 
 ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
   ascoltatori_kafka.subscribe('sslSub', function(topic, message) {
-    console.log("topic name : " + topic + " message : " + message);
-
     subSSLFunction(message)
 
+    console.log("subtracting ssl option to topic : " + topic + " succeed");
   });
 });
 
@@ -126,6 +123,19 @@ function makeFunction(brokerId,ipAddress,port){
         });
       });
     });
+
+    broker.subscribe("enow/server0/"+brokerId+"/+/order");
+    broker.on('message', function (topic, message) {
+      console.log("succeed subscribing to mqtt topic " + topic);
+
+      ascoltatori_kafka.build(settings_kafka, function (err, ascoltatori_kafka){
+        ascoltatori_kafka.publish("order", message, function() {
+          console.log("succeed publishing to kafka topic status");
+        });
+      });
+    });
+
+
   })
 
   functions[functions.length-1]()
