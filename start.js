@@ -17,7 +17,6 @@ var settings_kafka = {
   }
 };
 
-var count = 0
 var brokerList = new Array()
 var functions = new Array()
 
