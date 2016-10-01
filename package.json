@@ -1,0 +1,32 @@
+{
+  "name": "enow-bridge",
+  "version": "0.0.4-alpha",
+  "description": "Client to server Bridge for ENOW Project",
+  "author": { "name": "kirkee2", "email": "kirkee2@naver.com", "url": "https://github.com/kirkee2" },
+  "contributors": [],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ENOW-IJI/ENOW-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ENOW-IJI/ENOW-bridge"
+  },
+  "main": "start.js",
+  "dependencies": {
+    "fs-ext": "0.5.0",
+    "mongodb": "^2.2.10",
+    "mqtt": "^2.0.1",
+    "ascoltatori":"3.1.0"
+  },
+  "devDependencies": {
+  },
+  "scripts": {
+  },
+  "engines": { "node": ">= 0.4.0" },
+  "licenses": [ {
+    "type": "MIT",
+    "url": "http://www.opensource.org/licenses/MIT"
+  } ],
+  "keywords": ["enow", "bridge", "IoT", "mqtt", "kafka"],
+  "homepage": "https://github.com/ENOW-IJI/ENOW-bridge"
+}
