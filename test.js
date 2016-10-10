@@ -6,7 +6,7 @@ var assert = require('assert')
 
 var kafkaProducer = kafka.Producer
 var kafkaConsumer = kafka.Consumer
-var client = new kafka.Client('127.0.0.1:2181')
+var client = new kafka.Client('192.168.99.100:2181')
 var producer = new kafkaProducer(client)
 var offset = new kafka.Offset(client);
 var payloads = [
@@ -24,12 +24,13 @@ var consumer = new kafkaConsumer(
       topic: 'feed',
       partition: 0,
       time : -1
+
     },
     {
       topic: 'brokerAdd',
       partition: 0,
       time : -1
-    },
+    }/*,
     {
       topic: 'brokerSub',
       partition: 0,
@@ -44,7 +45,7 @@ var consumer = new kafkaConsumer(
       topic: 'sslSub',
       partition: 0,
       time : -1
-    }
+    }*/
 
   ]
 );
@@ -69,7 +70,7 @@ var findbrokers = function(db, callback) {
    });
 };
 
-MongoClient.connect('mongodb://127.0.0.1:27017/connectionData', function(err, db) {
+MongoClient.connect('mongodb://192.168.99.100:27017/connectionData', function(err, db) {
   assert.equal(null, err);
   findbrokers(db, function() {
       db.close();
