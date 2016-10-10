@@ -6,9 +6,9 @@ var assert = require('assert')
 
 var kafkaProducer = kafka.Producer
 var kafkaConsumer = kafka.Consumer
-
 var client = new kafka.Client('127.0.0.1:2181')
 var producer = new kafkaProducer(client)
+var offset = new kafka.Offset(client);
 var payloads = [
     {
         // topic:'event',
@@ -23,25 +23,33 @@ var consumer = new kafkaConsumer(
     {
       topic: 'feed',
       partition: 0,
+      time : -1
     },
     {
       topic: 'brokerAdd',
       partition: 0,
+      time : -1
     },
     {
       topic: 'brokerSub',
       partition: 0,
+      time : -1
     },
     {
       topic: 'sslAdd',
       partition: 0,
+      time : -1
     },
     {
       topic: 'sslSub',
       partition: 0,
+      time : -1
     }
+
   ]
 );
+
+
 
 
 
@@ -61,12 +69,13 @@ var findbrokers = function(db, callback) {
    });
 };
 
-MongoClient.connect('mongodb://localhost:27017/connectionData', function(err, db) {
+MongoClient.connect('mongodb://127.0.0.1:27017/connectionData', function(err, db) {
   assert.equal(null, err);
   findbrokers(db, function() {
       db.close();
   });
 });
+
 
 consumer.on('message', function (message) {
   if(message.topic == 'feed'){
@@ -112,6 +121,8 @@ consumer.on('message', function (message) {
     console.log("subtracting ssl option to topic : " + topic + " succeed");
   }
 });
+
+
 
 function makeFunction(brokerId,ipAddress,port){
   functions.push(function(){
