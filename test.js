@@ -5,6 +5,7 @@ var kafkaConsumer = kafka.Consumer
 var client = new kafka.Client('127.0.0.1:2181')
 var producer = new kafkaProducer(client)
 var offset = new kafka.Offset(client);
+var fs = require('fs')
 var Mqttclient  = mqtt.connect('mqtt://127.0.0.1:1883')
 var Mqttclient2  = mqtt.connect('mqtt://127.0.0.1:1883')
 var payloads = [
@@ -14,6 +15,8 @@ var payloads = [
         partition: 0
     }
 ]
+
+console.log(fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/ca.crt'));
 
 var functions = new Array()
 

@@ -127,9 +127,20 @@ offset.fetchLatestOffsets(['feed','brokerAdd','brokerSub','sslAdd','sslSub'], fu
           }
         }
       }else if(message.topic == 'sslAdd'){
-        addSSLFunction(message.value)
+        var tmp = JSON.parse(message.value)
+
+        var brokerId = tmp.brokerId
+        var caFile = tmp.caFile
+        var certFile = tmp.certFile
+        var keyFile = tmp.keyFile
+
+        addSSLFunction(brokerId,caFile,certFile,keyFile)
       }else if(message.topic == 'sslSub'){
-        subSSLFunction(message.value)
+        var tmp = JSON.parse(message.value)
+
+        var brokerId = tmp.brokerId
+
+        subSSLFunction(brokerId)
       }
     });
 });
@@ -190,15 +201,21 @@ function makeFunction(brokerId,ipAddress,port){
   }
 }
 
-function addSSLFunction(brokerId){
+function addSSLFunction(brokerId,caFile,certFile,keyFile){
   for(i = 0 ; i<functions.length ; i++){
     if(brokerId == functions[i].brokerId){
+
+      functions[i].brokerStatus.end()
+      functions[i].brokerOrder.end()
+      functions[i].brokerFeed.end()
+
       var options = {
-        key: fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/iui-MacBook-Air.local.key'),
-        cert: fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/iui-MacBook-Air.local.crt'),
-        rejectUnauthorized: true,
+        ca: caFile,
+        cert: certFile,
+        key: keyFile,
+
+        rejectUnauthorized: true
         // The CA list will be used to determine if server is authorized
-        ca: fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/ca.crt')
       }
 
       var brokerStatus = mqtt.connect(functions[i].brokerSetting,options)
@@ -244,24 +261,19 @@ function addSSLFunction(brokerId){
 }
 
 function subSSLFunction(brokerId){
-  console.log(brokerId + "asdasasasasds");
-  var tmp = JSON.parse(brokerId)
-
-  brokerId=tmp.brokerId
-
-  console.log(brokerId + "12321312321331");
   for(i = 0 ; i<functions.length ; i++){
     if(brokerId == functions[i].brokerId){
       var options = {
 
       }
 
+      functions[i].brokerStatus.end()
+      functions[i].brokerOrder.end()
+      functions[i].brokerFeed.end()
+
       var brokerStatus = mqtt.connect(functions[i].brokerSetting,options)
       var brokerOrder = mqtt.connect(functions[i].brokerSetting,options)
       var brokerFeed = mqtt.connect(functions[i].brokerSetting,options)
-
-      console.log(functions[i].brokerSetting);
-
 
       functions[i].brokerStatus = brokerStatus
       functions[i].brokerOrder = brokerOrder
