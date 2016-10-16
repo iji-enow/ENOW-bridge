@@ -6,8 +6,7 @@ var client = new kafka.Client('127.0.0.1:2181')
 var producer = new kafkaProducer(client)
 var offset = new kafka.Offset(client);
 var fs = require('fs')
-var Mqttclient  = mqtt.connect('mqtt://127.0.0.1:1883')
-var Mqttclient2  = mqtt.connect('mqtt://127.0.0.1:1883')
+//var Mqttclient2  = mqtt.connect('mqtt://127.0.0.1:1883')
 var payloads = [
     {
         // topic:'event',
@@ -16,39 +15,15 @@ var payloads = [
     }
 ]
 
-console.log(fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/ca.crt'));
-
-var functions = new Array()
-
-functions.push("1")
-functions.push("2")
-functions.push("3")
-functions.push("4")
-functions.push("5")
-functions.push("6")
-functions.push("7")
-functions.push("8")
-functions.push("9")
-functions.push("10")
-functions.push("11")
-
-for(var i = 0 ; i<functions.length ; i++){
-  console.log(i + " = " + functions[i]);
+var options = {
+  key: fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/iui-MacBook-Air.local.key'),
+  cert: fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/iui-MacBook-Air.local.crt'),
+  rejectUnauthorized: true,
+  // The CA list will be used to determine if server is authorized
+  ca: fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/ca.crt')
 }
 
-functions.splice(3,1);
-
-for(var i = 0 ; i<functions.length ; i++){
-  console.log(i + " = " + functions[i]);
-}
-
-functions.push("12")
-
-for(var i = 0 ; i<functions.length ; i++){
-  console.log(i + " = " + functions[i]);
-}
-
-
+var Mqttclient  = mqtt.connect('mqtt://127.0.0.1:8883',options)
 
 
 offset.fetchLatestOffsets(['feed'], function (error, offsets) {
@@ -120,7 +95,8 @@ offset.fetchLatestOffsets(['feed'], function (error, offsets) {
 
 var a = function(){
   console.log("start1");
-  Mqttclient.subscribe('enow/server0/a/1/feed')
+  Mqttclient.publish('test', 'Hello mqtt')
+  Mqttclient.subscribe('test')
 
 
   Mqttclient.on('message', function (topic, message) {
