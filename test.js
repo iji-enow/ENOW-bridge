@@ -1,14 +1,12 @@
 var mqtt = require('mqtt')
 var kafka = require('kafka-node')
-var fs = require('fs')
-var MongoClient = require('mongodb').MongoClient
-var assert = require('assert')
-
 var kafkaProducer = kafka.Producer
 var kafkaConsumer = kafka.Consumer
-var client = new kafka.Client('192.168.99.100:2181')
+var client = new kafka.Client('127.0.0.1:2181')
 var producer = new kafkaProducer(client)
 var offset = new kafka.Offset(client);
+var Mqttclient  = mqtt.connect('mqtt://127.0.0.1:1883')
+var Mqttclient2  = mqtt.connect('mqtt://127.0.0.1:1883')
 var payloads = [
     {
         // topic:'event',
@@ -17,251 +15,115 @@ var payloads = [
     }
 ]
 
-var consumer = new kafkaConsumer(
-  client,
-  [
-    {
-      topic: 'feed',
-      partition: 0,
-      time : -1
-
-    },
-    {
-      topic: 'brokerAdd',
-      partition: 0,
-      time : -1
-    }/*,
-    {
-      topic: 'brokerSub',
-      partition: 0,
-      time : -1
-    },
-    {
-      topic: 'sslAdd',
-      partition: 0,
-      time : -1
-    },
-    {
-      topic: 'sslSub',
-      partition: 0,
-      time : -1
-    }*/
-
-  ]
-);
-
-
-
-
-
-var brokerList = new Array()
 var functions = new Array()
 
-var findbrokers = function(db, callback) {
-   var cursor =db.collection('brokerList').find( );
-   cursor.each(function(err, doc) {
-      assert.equal(err, null);
-      if (doc != null) {
-         makeFunction(doc.brokerId,doc.ipAddress,doc.port)
-         console.log('made connection to brokerId : ' + doc.brokerId + ' ipAddress : ' + doc.ipAddress + ' port : '  + doc.port);
-      } else {
-         callback();
-      }
-   });
-};
+functions.push("1")
+functions.push("2")
+functions.push("3")
+functions.push("4")
+functions.push("5")
+functions.push("6")
+functions.push("7")
+functions.push("8")
+functions.push("9")
+functions.push("10")
+functions.push("11")
 
-MongoClient.connect('mongodb://192.168.99.100:27017/connectionData', function(err, db) {
-  assert.equal(null, err);
-  findbrokers(db, function() {
-      db.close();
-  });
+for(var i = 0 ; i<functions.length ; i++){
+  console.log(i + " = " + functions[i]);
+}
+
+functions.splice(3,1);
+
+for(var i = 0 ; i<functions.length ; i++){
+  console.log(i + " = " + functions[i]);
+}
+
+functions.push("12")
+
+for(var i = 0 ; i<functions.length ; i++){
+  console.log(i + " = " + functions[i]);
+}
+
+
+
+
+offset.fetchLatestOffsets(['feed'], function (error, offsets) {
+    if (error)
+    return handleError(error);
+
+    var feedLatestOffset = offsets['feed'][0];
+
+    consumer = new kafkaConsumer(
+        client,
+        [
+            {
+                topic: 'feed',
+                partition: 0,
+                offset: feedLatestOffset
+            }
+        ],
+        {
+            autoCommit: false,
+            fromOffset: true
+        }
+    );
+    // when kafka message came from topic:'log'.
+
+    consumer.on('message', function (message) {
+      console.log(message);
+      if(message.topic == 'feed'){
+        if(message.value == '2'){
+          console.log("2 feed came");
+          Mqttclient.end()
+
+          a = function(){
+            Mqttclient2  = mqtt.connect('mqtt://127.0.0.1:1883')
+            console.log("start 2");
+            Mqttclient2.publish('enow/server0/a/2/feed', 'Hello mqtt')
+            Mqttclient2.subscribe('enow/server0/a/2/feed')
+
+
+            Mqttclient2.on('message', function (topic, message) {
+              // message is Buffer
+              console.log(message.toString())
+            })
+          }
+
+          a();
+        }else if(message.value == '1'){
+          console.log("1 feed came");
+          Mqttclient2.end()
+
+          a = function(){
+            Mqttclient  = mqtt.connect('mqtt://127.0.0.1:1883')
+            console.log("start 1");
+            Mqttclient.publish('enow/server0/a/1/feed', 'Hello mqtt')
+            Mqttclient.subscribe('enow/server0/a/1/feed')
+
+
+            Mqttclient.on('message', function (topic, message) {
+              // message is Buffer
+              console.log(message.toString())
+            })
+          }
+
+          a();
+        }
+      }
+    })
 });
 
 
-consumer.on('message', function (message) {
-  if(message.topic == 'feed'){
-    var tmp = JSON.parse(message.value)
-
-    var topicName = tmp.topic
-    var payload = tmp.payload
-    var callback = payload.callback
-
-    var arr = topicName.split("/");
-    var brokerId = arr[2];
-
-    for(i = 0 ; i<brokerList.length ; i++){
-      if(brokerId == brokerList[i].brokerId){
-        brokerList[i].brokerFeed.publish(topicName + "/feed",JSON.stringify(callback))
-        console.log("messaging to a message " + JSON.stringify(callback)+" to topic name : " + topicName + "/feed succeed");
-      }
-    }
-  }else if(message.topic == 'brokerAdd'){
-    console.log("added broker : " + message.value);
-
-    var tmp = JSON.parse(message.value)
-
-    var brokerId = tmp.brokerId
-    var ipAddress = tmp.ipAddress
-    var port = tmp.port
-
-    makeFunction(brokerId,ipAddress,port)
-  }else if(message.topic == 'brokerSub'){
-    for(i = 0 ; i<brokerList.length ; i++){
-      if(message == brokerList[i].brokerId){
-        console.log("delete" + message.value);
-        console.log("deleting broker is not succeed")
-        brokerList.splice(i,1);
-        functions.splice(i,1);
-      }
-    }
-  }else if(message.topic == 'sslAdd'){
-    addSSLFunction(message.value)
-    console.log("adding ssl option to topic : " + topic + " succeed");
-  }else if(message.topic == 'sslSub'){
-    subSSLFunction(message.value)
-    console.log("subtracting ssl option to topic : " + topic + " succeed");
-  }
-});
+var a = function(){
+  console.log("start1");
+  Mqttclient.subscribe('enow/server0/a/1/feed')
 
 
-
-function makeFunction(brokerId,ipAddress,port){
-  functions.push(function(){
-    var brokerSetting = "mqtt://"+ ipAddress+":"+port
-    var brokerStatus = mqtt.connect(brokerSetting)
-    var brokerOrder = mqtt.connect(brokerSetting)
-    var brokerFeed = mqtt.connect(brokerSetting)
-
-    brokerList.push({"brokerId":brokerId,"brokerFeed":brokerFeed,"brokerStatus":brokerStatus,"brokerOrder":brokerOrder,"brokerSetting":brokerSetting})
-
-    brokerStatus.subscribe("enow/server0/"+brokerId+"/+/status");
-    brokerStatus.on('message', function (topic, message) {
-      console.log("succeed subscribing to mqtt topic " + topic);
-
-      var payload = [
-        { topic: 'status', messages: message, partition: 0 }
-      ];
-
-      producer.send(payload, function (err, data) {
-        console.log("succeed publishing to kafka topic status");
-      });
-
-    });
-
-    brokerOrder.subscribe("enow/server0/"+brokerId+"/+/order");
-    brokerOrder.on('message', function (topic, message) {
-      console.log("succeed subscribing to mqtt topic " + topic);
-
-      var payload = [
-        { topic: 'order', messages: message, partition: 0 }
-      ];
-
-      producer.send(payload, function (err, data) {
-          console.log("succeed publishing to kafka topic order");
-      });
-
-    });
-
-
+  Mqttclient.on('message', function (topic, message) {
+    // message is Buffer
+    console.log(message.toString())
   })
-
-  functions[functions.length-1]()
 }
 
-function addSSLFunction(brokerId){
-  var index
-  for(i = 0 ; i<brokerList.length ; i++){
-    if(brokerId == brokerList[i].brokerId){
-      var options = {
-        key: fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/iui-MacBook-Air.local.key'),
-        cert: fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/iui-MacBook-Air.local.crt'),
-        rejectUnauthorized: true,
-        // The CA list will be used to determine if server is authorized
-        ca: fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/ca.crt')
-      }
-
-      var brokerStatusSSL = mqtt.connect(brokerList[i].brokerSetting,options)
-      var brokerOrderSSL = mqtt.connect(brokerList[i].brokerSetting,options)
-      var brokerFeedSSL = mqtt.connect(brokerList[i].brokerSetting,options)
-
-      brokerList[i] = {"brokerId":brokerId,"brokerFeedSSL":brokerFeedSSL,"brokerStatusSSL":brokerStatusSSL,"brokerOrderSSL":brokerOrderSSL,"brokerSetting":brokerList[i].brokerSetting,"options":options}
-
-      functions[i] = function(){
-
-        brokerStatusSSL.subscribe("enow/server0/"+brokerId+"/+/status");
-        brokerStatusSSL.on('message', function (topic, message) {
-          console.log("succeed subscribing to mqtt topic " + topic);
-
-          var payload = [
-            { topic: 'status', messages: message, partition: 0 }
-          ];
-
-          producer.send(payload, function (err, data) {
-            console.log("succeed publishing to kafka topic status");
-          });
-
-        });
-
-        brokerOrderSSL.subscribe("enow/server0/"+brokerId+"/+/order");
-        brokerOrderSSL.on('message', function (topic, message) {
-          console.log("succeed subscribing to mqtt topic " + topic);
-
-          var payload = [
-            { topic: 'order', messages: message, partition: 0 }
-          ];
-
-            producer.send(payload, function (err, data) {
-              console.log("succeed publishing to kafka topic order");
-            });
-        });
-      }
-      index = i;
-    }
-  }
-  functions[index]()
-}
-
-function subSSLFunction(brokerId){
-  var index
-  for(i = 0 ; i<brokerList.length ; i++){
-    if(brokerId == brokerList[i].brokerId){
-      var brokerStatus = mqtt.connect(brokerList[i].brokerSetting)
-      var brokerOrder = mqtt.connect(brokerList[i].brokerSetting)
-
-      brokerList[i] = {"brokerId":brokerId,"brokerStatus":brokerStatus,"brokerOrder":brokerOrder,"brokerSetting":brokerList[i].brokerSetting}
-
-      functions[i] = function(){
-        brokerStatus.subscribe("enow/server0/"+brokerId+"/+/status");
-        brokerStatus.on('message', function (topic, message) {
-          console.log("succeed subscribing to mqtt topic " + topic);
-
-          var payload = [
-            { topic: 'status', messages: message, partition: 0 }
-          ];
-            producer.send(payloads, function (err, data) {
-              console.log("succeed publishing to kafka topic status");
-            });
-
-        });
-
-        brokerOrder.subscribe("enow/server0/"+brokerId+"/+/order");
-        brokerOrder.on('message', function (topic, message) {
-          console.log("succeed subscribing to mqtt topic " + topic);
-
-          var payload = [
-            { topic: 'order', messages: message, partition: 0 }
-          ];
-
-            producer.send(payloads, function (err, data) {
-              console.log("succeed publishing to kafka topic order");
-            });
-
-        });
-      }
-
-      index = i;
-    }
-  }
-
-  functions[index]()
-}
+a()

@@ -98,8 +98,7 @@ offset.fetchLatestOffsets(['feed','brokerAdd','brokerSub','sslAdd','sslSub'], fu
         for(i = 0 ; i<functions.length ; i++){
           if(brokerId == functions[i].brokerId){
             functions[i].brokerFeed.publish(topicName + "/feed",callback)
-            //functions[i].brokerFeed.publish(topicName + "/feed",callback)
-            console.log("messaging to a message " + callback+" to topic name : " + topicName + "/feed succeed");
+            console.log("messaging to topic name : " + topicName + "/feed  a message " + callback + " succeed");
           }
         }
       }else if(message.topic == 'brokerAdd'){
@@ -120,16 +119,17 @@ offset.fetchLatestOffsets(['feed','brokerAdd','brokerSub','sslAdd','sslSub'], fu
         for(i = 0 ; i<functions.length ; i++){
           if(brokerId == functions[i].brokerId){
             console.log("deleted broker " + brokerId);
-            console.log("deleting broker is not succeed")
+            functions[i].brokerStatus.end()
+            functions[i].brokerOrder.end()
+            functions[i].brokerFeed.end()
+
             functions.splice(i,1);
           }
         }
       }else if(message.topic == 'sslAdd'){
         addSSLFunction(message.value)
-        console.log("adding ssl option to topic : " + topic + " succeed");
       }else if(message.topic == 'sslSub'){
         subSSLFunction(message.value)
-        console.log("subtracting ssl option to topic : " + topic + " succeed");
       }
     });
 });
@@ -191,7 +191,6 @@ function makeFunction(brokerId,ipAddress,port){
 }
 
 function addSSLFunction(brokerId){
-  var index
   for(i = 0 ; i<functions.length ; i++){
     if(brokerId == functions[i].brokerId){
       var options = {
@@ -202,19 +201,19 @@ function addSSLFunction(brokerId){
         ca: fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/ca.crt')
       }
 
-      var brokerStatusSSL = mqtt.connect(functions[i].brokerSetting,options)
-      var brokerOrderSSL = mqtt.connect(functions[i].brokerSetting,options)
-      var brokerFeedSSL = mqtt.connect(functions[i].brokerSetting,options)
+      var brokerStatus = mqtt.connect(functions[i].brokerSetting,options)
+      var brokerOrder = mqtt.connect(functions[i].brokerSetting,options)
+      var brokerFeed = mqtt.connect(functions[i].brokerSetting,options)
 
-      functions[i].brokerFeed = brokerFeedSSL
-      functions[i].brokerStatus = brokerStatusSSL
-      functions[i].brokerOrder = brokerOrderSSL
+      functions[i].brokerStatus = brokerStatus
+      functions[i].brokerOrder = brokerOrder
+      functions[i].brokerFeed = brokerFeed
       functions[i].options = options
 
       functions[i].function = function(){
 
-        brokerStatusSSL.subscribe("enow/server0/"+brokerId+"/+/status");
-        brokerStatusSSL.on('message', function (topic, message) {
+        brokerStatus.subscribe("enow/server0/"+brokerId+"/+/status");
+        brokerStatus.on('message', function (topic, message) {
           console.log("succeed subscribing to mqtt topic " + topic);
 
           var payload = [
@@ -224,49 +223,6 @@ function addSSLFunction(brokerId){
           producer.send(payload, function (err, data) {
             console.log("succeed publishing to kafka topic status");
           });
-
-        });
-
-        brokerOrderSSL.subscribe("enow/server0/"+brokerId+"/+/order");
-        brokerOrderSSL.on('message', function (topic, message) {
-          console.log("succeed subscribing to mqtt topic " + topic);
-
-          var payload = [
-            { topic: 'order', messages: message, partition: 0 }
-          ];
-
-            producer.send(payload, function (err, data) {
-              console.log("succeed publishing to kafka topic order");
-            });
-        });
-      }
-      index = i;
-    }
-  }
-  functions[index]()
-}
-
-function subSSLFunction(brokerId){
-  var index
-  for(i = 0 ; i<brokerList.length ; i++){
-    if(brokerId == brokerList[i].brokerId){
-      var brokerStatus = mqtt.connect(brokerList[i].brokerSetting)
-      var brokerOrder = mqtt.connect(brokerList[i].brokerSetting)
-
-      brokerList[i] = {"brokerId":brokerId,"brokerStatus":brokerStatus,"brokerOrder":brokerOrder,"brokerSetting":brokerList[i].brokerSetting}
-
-      functions[i] = function(){
-        brokerStatus.subscribe("enow/server0/"+brokerId+"/+/status");
-        brokerStatus.on('message', function (topic, message) {
-          console.log("succeed subscribing to mqtt topic " + topic);
-
-          var payload = [
-            { topic: 'status', messages: message, partition: 0 }
-          ];
-            producer.send(payloads, function (err, data) {
-              console.log("succeed publishing to kafka topic status");
-            });
-
         });
 
         brokerOrder.subscribe("enow/server0/"+brokerId+"/+/order");
@@ -277,16 +233,70 @@ function subSSLFunction(brokerId){
             { topic: 'order', messages: message, partition: 0 }
           ];
 
-            producer.send(payloads, function (err, data) {
-              console.log("succeed publishing to kafka topic order");
-            });
-
+          producer.send(payload, function (err, data) {
+            console.log("succeed publishing to kafka topic order");
+          });
         });
       }
-
-      index = i;
+      functions[i].function()
     }
   }
+}
 
-  functions[index]()
+function subSSLFunction(brokerId){
+  console.log(brokerId + "asdasasasasds");
+  var tmp = JSON.parse(brokerId)
+
+  brokerId=tmp.brokerId
+
+  console.log(brokerId + "12321312321331");
+  for(i = 0 ; i<functions.length ; i++){
+    if(brokerId == functions[i].brokerId){
+      var options = {
+
+      }
+
+      var brokerStatus = mqtt.connect(functions[i].brokerSetting,options)
+      var brokerOrder = mqtt.connect(functions[i].brokerSetting,options)
+      var brokerFeed = mqtt.connect(functions[i].brokerSetting,options)
+
+      console.log(functions[i].brokerSetting);
+
+
+      functions[i].brokerStatus = brokerStatus
+      functions[i].brokerOrder = brokerOrder
+      functions[i].brokerFeed = brokerFeed
+      functions[i].options = options
+
+      functions[i].function = function(){
+
+        brokerStatus.subscribe("enow/server0/"+brokerId+"/+/status");
+        brokerStatus.on('message', function (topic, message) {
+          console.log("succeed subscribing to mqtt topic " + topic);
+
+          var payload = [
+            { topic: 'status', messages: message, partition: 0 }
+          ];
+
+          producer.send(payloads, function (err, data) {
+            console.log("succeed publishing to kafka topic status");
+          });
+        });
+
+        brokerOrder.subscribe("enow/server0/"+brokerId+"/+/order");
+        brokerOrder.on('message', function (topic, message) {
+          console.log("succeed subscribing to mqtt topic " + topic);
+
+          var payload = [
+            { topic: 'order', messages: message, partition: 0 }
+          ];
+
+          producer.send(payloads, function (err, data) {
+            console.log("succeed publishing to kafka topic order");
+          });
+        });
+      }
+      functions[i].function()
+    }
+  }
 }
