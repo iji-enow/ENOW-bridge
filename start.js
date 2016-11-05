@@ -227,6 +227,8 @@ function addSSLFunction(brokerId,caFile,certFile,keyFile){
       functions[i].brokerFeed = brokerFeed
       functions[i].options = options
 
+      console.log("succeed adding ssl to broker " + brokerId);
+
       functions[i].function = function(){
 
         brokerStatus.subscribe("enow/server0/"+brokerId+"/+/status");
@@ -255,6 +257,7 @@ function addSSLFunction(brokerId,caFile,certFile,keyFile){
           });
         });
       }
+
       functions[i].function()
     }
   }
@@ -263,6 +266,7 @@ function addSSLFunction(brokerId,caFile,certFile,keyFile){
 function subSSLFunction(brokerId){
   for(i = 0 ; i<functions.length ; i++){
     if(brokerId == functions[i].brokerId){
+
       var options = {
 
       }
@@ -280,6 +284,8 @@ function subSSLFunction(brokerId){
       functions[i].brokerFeed = brokerFeed
       functions[i].options = options
 
+      console.log("succeed subtracting ssl to broker " + brokerId);
+
       functions[i].function = function(){
 
         brokerStatus.subscribe("enow/server0/"+brokerId+"/+/status");
@@ -290,7 +296,7 @@ function subSSLFunction(brokerId){
             { topic: 'status', messages: message, partition: 0 }
           ];
 
-          producer.send(payloads, function (err, data) {
+          producer.send(payload, function (err, data) {
             console.log("succeed publishing to kafka topic status");
           });
         });
@@ -303,7 +309,7 @@ function subSSLFunction(brokerId){
             { topic: 'order', messages: message, partition: 0 }
           ];
 
-          producer.send(payloads, function (err, data) {
+          producer.send(payload, function (err, data) {
             console.log("succeed publishing to kafka topic order");
           });
         });

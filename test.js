@@ -23,6 +23,9 @@ var options = {
   ca: fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/ca.crt')
 }
 
+console.log(fs.readFileSync('/Users/leegunjoon/Documents/downloadSpace/tools/TLS/ca.crt'));
+
+
 var Mqttclient  = mqtt.connect('mqtt://127.0.0.1:8883',options)
 
 
